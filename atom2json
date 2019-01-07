@@ -1,0 +1,27 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use 5.010;
+
+use HTTP::Tiny;
+use XML::LibXML;
+use XML::LibXML::XPathContext;
+use JSON;
+
+my $url = 'https://trakt.tv/users/davorg/history.atom'
+        . '?slurm=e94f879ae8bd21e4c6aca5a25228eeda';
+
+my $response = HTTP::Tiny->new->get($url);
+my $xml = $response->{content};
+
+my $doc = XML::LibXML->load_xml(string => $xml)
+  or die;
+my $root = $doc->getDocumentElement;
+my $xpc = XML::LibXML::XPathContext->new($root);
+
+$xpc->registerNs('Atom', 'http://www.w3.org/2005/Atom');
+
+for ($xpc->findnodes('//Atom:entry')) {
+  say $xpc->findvalue('./Atom:title', $_);
+}
