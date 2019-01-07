@@ -22,6 +22,45 @@ my $xpc = XML::LibXML::XPathContext->new($root);
 
 $xpc->registerNs('Atom', 'http://www.w3.org/2005/Atom');
 
+my $data;
+
 for ($xpc->findnodes('//Atom:entry')) {
-  say $xpc->findvalue('./Atom:title', $_);
+  my $evt;
+  $evt = parse_title($xpc->findvalue('./Atom:title', $_));
+
+  push @$data, $evt;
+}
+
+say JSON->new->pretty->encode($data);
+
+sub parse_title {
+  my ($title) = @_;
+
+  if ($title =~ /\(\d+\)$/) {
+    return parse_film_title($title);
+  } else {
+    return parse_tv_title($title);
+  }
+}
+
+sub parse_film_title {
+  my ($title) = @_;
+
+  my ($film, $year) = $title =~ /(.*)\s+\((\d+)\)$/;
+
+  return { title => $film, year => $year};
+}
+
+sub parse_tv_title {
+  my ($title) = @_;
+
+  my ($show, $series, $episode, $ep_title)
+    = $title =~ /(.*)\s+(\d+)x(\d+)\s+"(.*)"$/;
+
+  return {
+    show => $show,
+    series => $series,
+    episode => $episode,
+    episode_title => $ep_title,
+  };
 }
